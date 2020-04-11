@@ -11,19 +11,21 @@ export default function Home() {
     <Wrap>
       <Title>STAMPED</Title>
       <Subtitle>Easily create timestamped notes.</Subtitle>
-      <Link
-        to={token}
-        style={{
-          textDecoration: 'none',
-        }}
-      >
-        <NewButton>
-          <>
-            <Edit size={15} style={{ paddingRight: '5px' }} />
-            New document
-          </>
-        </NewButton>
-      </Link>
+      <div>
+        <Link
+          to={token}
+          style={{
+            textDecoration: 'none',
+          }}
+        >
+          <NewButton>
+            <>
+              <Edit size={15} style={{ paddingRight: '5px' }} />
+              New document
+            </>
+          </NewButton>
+        </Link>
+      </div>
       <LeftAlignDiv>
         <h4>How it works</h4>
         <ol>
@@ -62,6 +64,7 @@ const Subtitle = styled.p`
 const NewButton = styled.button`
   display: flex;
   align-items: center;
+  cursor: pointer;
   margin: 50px 0 70px 0;
 `;
 
