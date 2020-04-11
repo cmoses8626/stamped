@@ -45,15 +45,15 @@ function TableRenderer({ columns, data, updateData }) {
   );
 }
 
-export default function Table() {
+export default function Table({ data, setData, time }) {
   const { id } = useParams();
-  const [data, setData] = useState(() => {
-    const defaultData = [
-      { col1: '', col2: '' },
-      { col1: '', col2: '' },
-    ];
-    return localStorage.getItem(id) || defaultData;
-  });
+  // const [data, setData] = useState(() => {
+  //   const defaultData = [
+  //     { col1: '', col2: '' },
+  //     { col1: '', col2: '' },
+  //   ];
+  //   return defaultData; // or localStorage.getItem(id)
+  // });
 
   // Wrapper around setData to deal with 2D data
   const updateData = (rowIndex, columnId, value) => {

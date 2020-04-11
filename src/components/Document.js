@@ -1,14 +1,117 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import styled from 'styled-components';
 import { useParams } from 'react-router-dom';
-import { Download, Play, Pause } from 'react-feather';
+import { Download, Play, Pause, Save } from 'react-feather';
 import { useTable } from 'react-table';
 import Table from './Table';
 import { useStopwatch } from '../customHooks';
 
+const { parse } = require('json2csv');
+
+function replaceCaret(el) {
+  // Place the caret at the end of the element
+  const target = document.createTextNode('');
+  el.appendChild(target);
+  // do not move caret if element was not focused
+  const isTargetFocused = document.activeElement === el;
+  if (target !== null && target.nodeValue !== null && isTargetFocused) {
+    const sel = window.getSelection();
+    if (sel !== null) {
+      const range = document.createRange();
+      range.setStart(target, target.nodeValue.length);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    if (el instanceof HTMLElement) el.focus();
+  }
+}
+
+const EditableCell = ({
+  rowIndex,
+  columnIndex,
+  updateData,
+  onKeyUp,
+  time,
+  initialValue,
+}) => {
+  const [value, setValue] = useState(initialValue);
+  const [pos, setPos] = useState(null);
+  const [targetRange, setTargetRange] = useState();
+  const cellRef = useRef(null);
+
+  const onBlur = e => {
+    const text = e.currentTarget.innerText;
+    setValue(text);
+    updateData(rowIndex, columnIndex, e.currentTarget.innerText);
+  };
+
+  const handleKeyPress = e => {
+    if (e.key === '.') {
+      const {
+        currentTarget: { dataset },
+      } = e;
+
+      // Get caret position after period
+      const sel = window.getSelection();
+      const range = sel.getRangeAt(0);
+
+      // Insert "[time]" after period
+      const newNode = document.createElement('span');
+      newNode.appendChild(document.createTextNode(` [${time}] `));
+      const timestamp = ` [${time}] `;
+      const timestampNode = document.createTextNode(timestamp);
+      range.insertNode(document.createTextNode(' '));
+      range.insertNode(newNode);
+      range.collapse(false);
+    }
+  };
+
+  return (
+    <td
+      contentEditable="true"
+      value={value}
+      onBlur={onBlur}
+      onKeyUp={handleKeyPress}
+      data-row={rowIndex}
+      data-col={columnIndex}
+      ref={cellRef}
+      style={
+        columnIndex === 0
+          ? {
+              position: 'sticky',
+              left: 0,
+              backgroundColor: '#fff',
+            }
+          : {
+              marginLeft: '350px',
+              overflowX: 'scroll',
+            }
+      }
+      dangerouslySetInnerHTML={{ __html: value }}
+    />
+  );
+};
+
 export default function Document() {
+  // Default empty array
+  const numRows = 25;
+  const numColumns = 25;
+  const emptyRow = new Array(numColumns).fill('', 0);
+  const emptyArray = new Array(numRows).fill(emptyRow, 0);
+
   const { id } = useParams();
-  const [notes, setNotes] = useState(() => localStorage.getItem(id) || '');
+  const [data, setData] = useState(
+    () => JSON.parse(localStorage.getItem(id)) || emptyArray
+  );
+  const [saveStatus, setSaveStatus] = useState('Save');
+  const [notes, setNotes] = useState(''); // useState(() => localStorage.getItem(id) || '');
   const {
     elapsedTime,
     isRunning,
@@ -16,6 +119,20 @@ export default function Document() {
     stopTimer,
     resetTimer,
   } = useStopwatch();
+
+  // Ref
+  const tableRef = useRef();
+
+  // Wrapper around setData to deal with 2D data and pull state changes up
+  const updateData = (rowIndex, columnIndex, value) => {
+    setData(prevData =>
+      prevData.map((row, i) => {
+        const tempRow = [...row];
+        if (i === rowIndex) tempRow[columnIndex] = value;
+        return tempRow;
+      })
+    );
+  };
 
   // Format elapsed time in hr:min:sec
   const hours = Math.floor(elapsedTime / 3600).toString();
@@ -30,25 +147,58 @@ export default function Document() {
   // Autosave 5sec after last edit
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      localStorage.setItem(id, notes);
+      localStorage.setItem(id, JSON.stringify(data));
     }, 5000);
     return function cleanup() {
       clearTimeout(timeoutId);
     };
-  }, [id, notes]);
+  }, [data, id]);
 
   const handleStartStop = () => {
     isRunning ? stopTimer() : startTimer();
   };
 
-  const handleKeyPress = e => {
-    if (e.key === '.') {
-      setNotes(`${notes} [${time}] `);
-    }
-  };
-
   const handleChange = e => {
     setNotes(e.target.value);
+  };
+
+  const saveAll = () => {
+    // Change Save button text to Saved! for 3 sec
+    setSaveStatus('Saved!');
+    setTimeout(() => setSaveStatus('Save'), 3000);
+
+    // Get table data
+    const arr = new Array(numRows).fill(emptyRow, 0);
+    const updatedData = arr.map((row, rowIndex) =>
+      row.map(
+        (cell, columnIndex) =>
+          tableRef.current.rows[rowIndex].childNodes[columnIndex].innerText
+      )
+    );
+
+    // Set state and save to local storage
+    localStorage.setItem(id, JSON.stringify(updatedData));
+    setData(updatedData);
+  };
+
+  const download = () => {
+    // Create csv from data
+    const csv = parse(data, { header: false });
+
+    // Create a hidden link (enables you to name the downloaded file)
+    const link = document.createElement('a');
+    const blob = new Blob([csv], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const url = window.URL.createObjectURL(blob);
+    link.href = url;
+    link.download = 'stamped.csv';
+    link.style = 'display: none';
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up for memory management
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -75,27 +225,70 @@ export default function Document() {
             Reset Timer
           </Timer>
         </FlexRow>
-        <DownloadButton>
-          <Download size={15} style={{ paddingRight: '5px' }} />
-          Download
-        </DownloadButton>
+        <FlexRow>
+          <SaveButton onClick={saveAll}>
+            <Save size={15} style={{ paddingRight: '5px' }} />
+            {saveStatus}
+          </SaveButton>
+          <DownloadButton onClick={download}>
+            <Download size={15} style={{ paddingRight: '5px' }} />
+            Download
+          </DownloadButton>
+        </FlexRow>
       </Header>
       <Content>
-        {/* <Table /> */}
-        <StyledInput
-          rows={30}
-          cols={100}
-          placeholder="Write your notes"
-          onChange={handleChange}
-          onKeyUp={handleKeyPress}
-          value={notes}
-        >
-          {notes}
-        </StyledInput>
+        <Styles>
+          <table ref={tableRef}>
+            <tbody>
+              {data.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, columnIndex) => (
+                    <EditableCell
+                      key={`${rowIndex}${columnIndex}`}
+                      data-row={rowIndex}
+                      data-col={columnIndex}
+                      rowIndex={rowIndex}
+                      columnIndex={columnIndex}
+                      updateData={updateData}
+                      time={time}
+                      initialValue={cell}
+                    />
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Styles>
       </Content>
     </Wrap>
   );
 }
+
+const Styles = styled.div`
+  position: relative;
+  overflow-x: auto;
+
+  span {
+    color: #b5b5b5;
+  }
+
+  table {
+    border: thin solid #e2e3e3;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: fixed;
+    td {
+      padding: 5px;
+      border: thin solid #e2e3e3;
+      font-size: 10pt;
+      outline: none;
+      vertical-align: bottom;
+      min-width: 350px;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+    }
+  }
+`;
 
 const Wrap = styled.div`
   display: flex;
@@ -105,43 +298,54 @@ const Wrap = styled.div`
   min-height: 100vh;
 `;
 
-const Content = styled.div`
-  background-color: white;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  min-width: 80vw;
-  max-width: 80vw;
-`;
-
 const Header = styled.div`
   display: flex;
-  margin: 20px 0 10px 0;
-  min-width: 80vw;
-  max-width: 80vw;
   justify-content: space-between;
+  min-width: 95vw;
+  margin: 20px 0 10px 0;
+  padding: 0 10px;
 `;
 
 const FlexRow = styled.div`
   display: flex;
 `;
 
+const Content = styled.div`
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  /* flex-grow: 1; */
+  /* min-width: 80vw; */
+  max-width: 100vw;
+`;
+
 const Timer = styled.button`
   display: flex;
   align-items: center;
+  cursor: pointer;
+`;
+
+const SaveButton = styled.button`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 5px;
 `;
 
 const DownloadButton = styled.button`
   display: flex;
   align-items: center;
+  cursor: pointer;
 `;
 
 const StyledInput = styled.textarea`
-  display: flex;
-  flex-grow: 1;
-  border: none;
+  /* display: flex; */
+  /* flex-grow: 1; */
+  /* border: none; */
+  border-collapse: collapse;
+  overflow: hidden;
   font-size: 1em;
   outline: none;
-  padding: 50px;
+  /* padding: 50px; */
   resize: none;
 `;
