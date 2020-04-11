@@ -87,7 +87,7 @@ const EditableCell = ({
           ? {
               position: 'sticky',
               left: 0,
-              backgroundColor: '#fff',
+              backgroundColor: '#f2f2f2',
             }
           : {
               marginLeft: '350px',
