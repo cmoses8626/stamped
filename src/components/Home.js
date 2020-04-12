@@ -6,7 +6,9 @@ import { Edit } from 'react-feather';
 
 export default function Home() {
   const token = uuidv4();
-  const [storedDocs, setStoredDocs] = useState(localStorage);
+  const storedDocsSize = (
+    new Blob(Object.values(localStorage)).size / 1024
+  ).toFixed(0);
 
   return (
     <Wrap>
@@ -41,12 +43,14 @@ export default function Home() {
         </ol>
       </LeftAlignDiv>
       <LeftAlignDiv>
-        <h4>Your saved docs</h4>
-        {Object.keys(storedDocs).length === 0 ? (
+        <h4>
+          Your saved docs ({(storedDocsSize / 1000).toFixed(0)} MB of 5 MB used)
+        </h4>
+        {Object.keys(localStorage).length === 0 ? (
           <p>None</p>
         ) : (
           <ol>
-            {Object.keys(storedDocs).map(doc => {
+            {Object.keys(localStorage).map(doc => {
               const size =
                 new Blob(Object.values(localStorage[doc])).size / 1024;
               return (
