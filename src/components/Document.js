@@ -6,8 +6,8 @@ import React, {
   useRef,
 } from 'react';
 import styled from 'styled-components';
-import { useParams } from 'react-router-dom';
-import { Download, Play, Pause, Save } from 'react-feather';
+import { Link, useParams } from 'react-router-dom';
+import { Download, Home, Play, Pause, Save } from 'react-feather';
 import { useTable } from 'react-table';
 import Table from './Table';
 import { useStopwatch } from '../customHooks';
@@ -205,6 +205,16 @@ export default function Document() {
     <Wrap>
       <Header>
         <FlexRow>
+          <Link
+            to="/"
+            style={{
+              textDecoration: 'none',
+            }}
+          >
+            <HomeButton>
+              <Home size={15} style={{ color: 'black' }} />
+            </HomeButton>
+          </Link>
           <Timer onClick={handleStartStop}>
             {isRunning === false ? (
               <>
@@ -303,7 +313,6 @@ const Header = styled.div`
   justify-content: space-between;
   min-width: 95vw;
   margin: 20px 0 10px 0;
-  padding: 0 10px;
 `;
 
 const FlexRow = styled.div`
@@ -317,6 +326,15 @@ const Content = styled.div`
   /* flex-grow: 1; */
   /* min-width: 80vw; */
   max-width: 100vw;
+`;
+
+const HomeButton = styled.button`
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  cursor: pointer;
+  margin-right: 5px;
+  padding-left: 0;
 `;
 
 const Timer = styled.button`

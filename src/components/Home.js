@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -6,6 +6,7 @@ import { Edit } from 'react-feather';
 
 export default function Home() {
   const token = uuidv4();
+  const [storedDocs, setStoredDocs] = useState(localStorage);
 
   return (
     <Wrap>
@@ -39,6 +40,26 @@ export default function Home() {
           </li>
         </ol>
       </LeftAlignDiv>
+      <LeftAlignDiv>
+        <h4>Your saved docs</h4>
+        {Object.keys(storedDocs).length === 0 ? (
+          <p>None</p>
+        ) : (
+          <ol>
+            {Object.keys(storedDocs).map(doc => {
+              const size =
+                new Blob(Object.values(localStorage[doc])).size / 1024;
+              return (
+                <Link to={doc} key={doc} style={{ color: 'black' }}>
+                  <li>
+                    {doc}&nbsp;({size.toFixed(0)}kB)
+                  </li>
+                </Link>
+              );
+            })}
+          </ol>
+        )}
+      </LeftAlignDiv>
     </Wrap>
   );
 }
@@ -69,9 +90,17 @@ const NewButton = styled.button`
 `;
 
 const LeftAlignDiv = styled.div`
-  max-width: 40vw;
+  width: 50%;
   text-align: left;
   li {
     line-height: 1.5;
+  }
+
+  @media screen and (max-width: 400px) {
+    .left,
+    .main,
+    .right {
+      width: 100%; /* The width is 100%, when the viewport is 400px or smaller */
+    }
   }
 `;
