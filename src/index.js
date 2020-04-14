@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import { initAmplitude } from './util/tracking';
+
+// Initialize Amplitude for tracking
+initAmplitude();
 
 ReactDOM.render(
   <React.StrictMode>

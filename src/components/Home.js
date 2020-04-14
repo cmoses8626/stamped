@@ -1,14 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { Edit } from 'react-feather';
+import { amplitudeEvent, amplitudeIdentify } from '../util/tracking';
 
 export default function Home() {
   const token = uuidv4();
+  const [documentIds, setDocumentIds] = useState(() => {
+    const ids = [];
+    // only grab our documents from localStorage
+    Object.keys(localStorage).forEach(id => {
+      if (RegExp(/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/).test(id)) ids.push(id);
+    });
+    return ids;
+  });
   const storedDocsSize = (
     new Blob(Object.values(localStorage)).size / 1024
   ).toFixed(0);
+
+  // Log amplitude events on page load
+  useEffect(() => {
+    amplitudeEvent('Home - Page Viewed');
+    amplitudeIdentify({ documents: localStorage.length });
+  }, []);
+
+  // Log event on New button click
+  const handleClick = eventName => {
+    amplitudeEvent(eventName);
+  };
 
   return (
     <Wrap>
@@ -17,6 +37,7 @@ export default function Home() {
       <div>
         <Link
           to={token}
+          onClick={() => handleClick('Home - New Document')}
           style={{
             textDecoration: 'none',
           }}
@@ -42,7 +63,7 @@ export default function Home() {
           </li>
         </ol>
       </LeftAlignDiv>
-      <LeftAlignDiv>
+      <LeftAlignDiv style={{ marginBottom: '30px' }}>
         <h4>
           Your saved docs ({(storedDocsSize / 1000).toFixed(0)} MB of 5 MB used)
         </h4>
@@ -50,13 +71,18 @@ export default function Home() {
           <p>None</p>
         ) : (
           <ol>
-            {Object.keys(localStorage).map(doc => {
+            {documentIds.map(id => {
               const size =
-                new Blob(Object.values(localStorage[doc])).size / 1024;
+                new Blob(Object.values(localStorage[id])).size / 1024;
               return (
-                <Link to={doc} key={doc} style={{ color: 'black' }}>
+                <Link
+                  to={id}
+                  key={id}
+                  style={{ color: 'black' }}
+                  onClick={() => handleClick('Home - Load Document')}
+                >
                   <li>
-                    {doc}&nbsp;({size.toFixed(0)}kB)
+                    {id}&nbsp;({size.toFixed(0)}kB)
                   </li>
                 </Link>
               );

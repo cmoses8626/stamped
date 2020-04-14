@@ -10,7 +10,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Download, Home, Play, Pause, Save } from 'react-feather';
 import { useTable } from 'react-table';
 import Table from './Table';
-import { useStopwatch } from '../customHooks';
+import { useStopwatch } from '../util/customHooks';
 
 const { parse } = require('json2csv');
 
