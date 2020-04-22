@@ -14,24 +14,24 @@ import { useStopwatch } from '../util/customHooks';
 
 const { parse } = require('json2csv');
 
-function replaceCaret(el) {
-  // Place the caret at the end of the element
-  const target = document.createTextNode('');
-  el.appendChild(target);
-  // do not move caret if element was not focused
-  const isTargetFocused = document.activeElement === el;
-  if (target !== null && target.nodeValue !== null && isTargetFocused) {
-    const sel = window.getSelection();
-    if (sel !== null) {
-      const range = document.createRange();
-      range.setStart(target, target.nodeValue.length);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-    if (el instanceof HTMLElement) el.focus();
-  }
-}
+// function replaceCaret(el) {
+//   // Place the caret at the end of the element
+//   const target = document.createTextNode('');
+//   el.appendChild(target);
+//   // do not move caret if element was not focused
+//   const isTargetFocused = document.activeElement === el;
+//   if (target !== null && target.nodeValue !== null && isTargetFocused) {
+//     const sel = window.getSelection();
+//     if (sel !== null) {
+//       const range = document.createRange();
+//       range.setStart(target, target.nodeValue.length);
+//       range.collapse(true);
+//       sel.removeAllRanges();
+//       sel.addRange(range);
+//     }
+//     if (el instanceof HTMLElement) el.focus();
+//   }
+// }
 
 const EditableCell = ({
   rowIndex,
@@ -73,6 +73,32 @@ const EditableCell = ({
     }
   };
 
+  // Set dynamic styles
+  let style = {};
+  if (columnIndex === 0) {
+    // Sticky first column & shaded bg
+    style = {
+      ...style,
+      position: 'sticky',
+      left: 0,
+      backgroundColor: '#f2f2f2',
+    }
+  }
+  else if (rowIndex === 0) {
+    // Shaded bg for first row
+    style = {
+      ...style,
+      backgroundColor: '#f2f2f2',
+    }
+  }
+  else {
+    style = {
+      ...style,
+      marginLeft: '350px',
+      overflowX: 'scroll',
+    }
+  }
+
   return (
     <td
       contentEditable="true"
@@ -82,18 +108,7 @@ const EditableCell = ({
       data-row={rowIndex}
       data-col={columnIndex}
       ref={cellRef}
-      style={
-        columnIndex === 0
-          ? {
-              position: 'sticky',
-              left: 0,
-              backgroundColor: '#f2f2f2',
-            }
-          : {
-              marginLeft: '350px',
-              overflowX: 'scroll',
-            }
-      }
+      style={style}
       dangerouslySetInnerHTML={{ __html: value }}
     />
   );
@@ -101,7 +116,7 @@ const EditableCell = ({
 
 export default function Document() {
   // Default empty array
-  const numRows = 25;
+  const numRows = 100;
   const numColumns = 25;
   const emptyRow = new Array(numColumns).fill('', 0);
   const emptyArray = new Array(numRows).fill(emptyRow, 0);
@@ -122,6 +137,17 @@ export default function Document() {
 
   // Ref
   const tableRef = useRef();
+
+  // Extend table size if default array is larger than previously saved data
+  const newArray = [...emptyArray];
+  if (data.length < numRows || data[0].length < numColumns) {
+    data.map((row, r) => {
+      row.map((col, c) => {
+        newArray[r,c] = data[r,c];
+      });
+    });
+    setData(newArray);
+  }
 
   // Wrapper around setData to deal with 2D data and pull state changes up
   const updateData = (rowIndex, columnIndex, value) => {
