@@ -213,7 +213,9 @@ export default function Document() {
 
     // Create a hidden link (enables you to name the downloaded file)
     const link = document.createElement('a');
-    const blob = new Blob([csv], {
+    const blob = new Blob([
+      new Uint8Array([0xEF, 0xBB, 0xBF]), // UTF-8 BOM to force Excel to UTF-8
+      csv], {
       type: 'text/csv;charset=utf-8;',
     });
     const url = window.URL.createObjectURL(blob);
