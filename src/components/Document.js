@@ -1,37 +1,14 @@
 import React, {
   useState,
   useEffect,
-  useLayoutEffect,
-  useMemo,
   useRef,
 } from 'react';
 import styled from 'styled-components';
 import { Link, useParams } from 'react-router-dom';
 import { Download, Home, Play, Pause, Save } from 'react-feather';
-import { useTable } from 'react-table';
-import Table from './Table';
 import { useStopwatch } from '../util/customHooks';
 
 const { parse } = require('json2csv');
-
-// function replaceCaret(el) {
-//   // Place the caret at the end of the element
-//   const target = document.createTextNode('');
-//   el.appendChild(target);
-//   // do not move caret if element was not focused
-//   const isTargetFocused = document.activeElement === el;
-//   if (target !== null && target.nodeValue !== null && isTargetFocused) {
-//     const sel = window.getSelection();
-//     if (sel !== null) {
-//       const range = document.createRange();
-//       range.setStart(target, target.nodeValue.length);
-//       range.collapse(true);
-//       sel.removeAllRanges();
-//       sel.addRange(range);
-//     }
-//     if (el instanceof HTMLElement) el.focus();
-//   }
-// }
 
 const EditableCell = ({
   rowIndex,
@@ -42,8 +19,6 @@ const EditableCell = ({
   initialValue,
 }) => {
   const [value, setValue] = useState(initialValue);
-  const [pos, setPos] = useState(null);
-  const [targetRange, setTargetRange] = useState();
   const cellRef = useRef(null);
 
   const onBlur = e => {
@@ -54,10 +29,6 @@ const EditableCell = ({
 
   const handleKeyPress = e => {
     if (e.key === '.') {
-      const {
-        currentTarget: { dataset },
-      } = e;
-
       // Get caret position after period
       const sel = window.getSelection();
       const range = sel.getRangeAt(0);
@@ -65,8 +36,6 @@ const EditableCell = ({
       // Insert "[time]" after period
       const newNode = document.createElement('span');
       newNode.appendChild(document.createTextNode(` [${time}] `));
-      const timestamp = ` [${time}] `;
-      const timestampNode = document.createTextNode(timestamp);
       range.insertNode(document.createTextNode(' '));
       range.insertNode(newNode);
       range.collapse(false);
@@ -126,7 +95,7 @@ export default function Document() {
     () => JSON.parse(localStorage.getItem(id)) || emptyArray
   );
   const [saveStatus, setSaveStatus] = useState('Save');
-  const [notes, setNotes] = useState(''); // useState(() => localStorage.getItem(id) || '');
+  // const [notes, setNotes] = useState(() => localStorage.getItem(id) || '');
   const {
     elapsedTime,
     isRunning,
@@ -141,11 +110,11 @@ export default function Document() {
   // Extend table size if default array is larger than previously saved data
   const newArray = [...emptyArray];
   if (data.length < numRows || data[0].length < numColumns) {
-    data.map((row, r) => {
-      row.map((col, c) => {
-        newArray[r,c] = data[r,c];
-      });
-    });
+    data.map((row, r) =>
+      row.map((col, c) =>
+        newArray[r,c] = data[r,c]
+      )
+    );
     setData(newArray);
   }
 
@@ -184,9 +153,9 @@ export default function Document() {
     isRunning ? stopTimer() : startTimer();
   };
 
-  const handleChange = e => {
-    setNotes(e.target.value);
-  };
+  // const handleChange = e => {
+  //   setNotes(e.target.value);
+  // };
 
   const saveAll = () => {
     // Change Save button text to Saved! for 3 sec
@@ -351,8 +320,6 @@ const Content = styled.div`
   background-color: white;
   display: flex;
   flex-direction: column;
-  /* flex-grow: 1; */
-  /* min-width: 80vw; */
   max-width: 100vw;
 `;
 

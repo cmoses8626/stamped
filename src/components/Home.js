@@ -6,15 +6,20 @@ import { Edit } from 'react-feather';
 import { amplitudeEvent, amplitudeIdentify } from '../util/tracking';
 
 export default function Home() {
+  // Generate token for new documents
   const token = uuidv4();
+
+  // Get document IDs from local storage, if any
   const [documentIds, setDocumentIds] = useState(() => {
     const ids = [];
-    // only grab our documents from localStorage
+    // only grab our documents from localStorage, named with uuid
     Object.keys(localStorage).forEach(id => {
       if (RegExp(/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/).test(id)) ids.push(id);
     });
     return ids;
   });
+
+  // Calculate total size of docs in local storage
   const storedDocsSize = (
     new Blob(Object.values(localStorage)).size / 1024
   ).toFixed(0);
@@ -22,7 +27,7 @@ export default function Home() {
   // Log amplitude events on page load
   useEffect(() => {
     amplitudeEvent('Home - Page Viewed');
-    amplitudeIdentify({ documents: localStorage.length });
+    amplitudeIdentify({ documents: documentIds.length });
   }, []);
 
   // Log event on New button click
@@ -102,9 +107,9 @@ const Wrap = styled.div`
 `;
 
 const Title = styled.h1`
+  border: 3px solid black;
   margin-top: 100px;
   padding: 10px 15px;
-  border: 3px solid black;
 `;
 
 const Subtitle = styled.p`
