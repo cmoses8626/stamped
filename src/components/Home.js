@@ -28,7 +28,7 @@ export default function Home() {
   useEffect(() => {
     amplitudeEvent('Home - Page Viewed');
     amplitudeIdentify({ documents: documentIds.length });
-  }, []);
+  }, [documentIds.length]);
 
   // Log event on New button click
   const handleClick = eventName => {
@@ -37,7 +37,7 @@ export default function Home() {
 
   return (
     <Wrap>
-      <Title>STAMPED</Title>
+      <Logo src={`${process.env.PUBLIC_URL}/LogoType.png`} />
       <Subtitle>Easily create timestamped notes.</Subtitle>
       <div>
         <Link
@@ -106,10 +106,10 @@ const Wrap = styled.div`
   text-align: center;
 `;
 
-const Title = styled.h1`
-  border: 3px solid black;
+const Logo = styled.img`
   margin-top: 100px;
-  padding: 10px 15px;
+  margin-bottom: 30px;
+  width: 30%;
 `;
 
 const Subtitle = styled.p`
@@ -119,9 +119,12 @@ const Subtitle = styled.p`
 
 const NewButton = styled.button`
   display: flex;
+  /* background-color: #64eb9a; */
+  /* border-radius: 10pt; */
   align-items: center;
   cursor: pointer;
-  margin: 50px 0 70px 0;
+  font-size: 0.9em;
+  margin: 50px 0;
 `;
 
 const LeftAlignDiv = styled.div`
